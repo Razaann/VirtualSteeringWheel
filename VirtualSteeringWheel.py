@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import math
+import time
 import pyautogui
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -12,7 +13,6 @@ HandLandmarkerResult = vision.HandLandmarkerResult
 
 pyautogui.FAILSAFE = False
 
-
 FINGER_CONNECTIONS = [
     (0, 1), (1, 2), (2, 3), (3, 4),
     (0, 5), (5, 6), (6, 7), (7, 8),
@@ -21,6 +21,16 @@ FINGER_CONNECTIONS = [
     (0, 17), (17, 18), (18, 19), (19, 20),
     (5, 9), (9, 13), (13, 17),
 ]
+
+
+def is_fist(hand_landmarks):
+    fingertips = [4, 8, 12, 16, 20]
+    finger_pips = [2, 6, 10, 14, 18]
+    
+    for tip, pip in zip(fingertips, finger_pips):
+        if hand_landmarks[tip].y > hand_landmarks[pip].y:
+            return False
+    return True
 
 
 def draw_hand(frame, hand_landmarks):
@@ -44,10 +54,12 @@ def run():
     detector = HandLandmarker.create_from_options(options)
 
     cap = cv2.VideoCapture(0)
-    last_direction = None
     current_key = None
+    current_steer = None
     direction = "No hands"
     angle = 0
+    prev_time = time.time()
+    fps = 0
     
     while cap.isOpened():
         ret, frame = cap.read()
@@ -60,13 +72,21 @@ def run():
         result = detector.detect(mp_image)
         
         wrists = []
+        hand_states = []
+        
         if result.hand_landmarks:
             for hand_landmarks in result.hand_landmarks:
                 wrist = draw_hand(frame, hand_landmarks)
                 wrists.append(wrist)
+                if is_fist(hand_landmarks):
+                    hand_states.append("Fist")
+                else:
+                    hand_states.append("Open")
         
         direction = "No hands"
         angle = 0
+        steer_key = None
+        gas_key = 'w'
         
         if len(wrists) == 2:
             cv2.line(frame, wrists[0], wrists[1], (255, 0, 255), 3)
@@ -83,36 +103,80 @@ def run():
                 ratio = min(abs(dy) / hypotenuse, 1.0)
                 angle = math.degrees(math.asin(ratio))
             
-            if angle > 10:
-                if dy > 0:
-                    direction = "Left higher"
-                    key = 'a'
-                else:
-                    direction = "Right higher"
-                    key = 'd'
+            is_fist_state = "Fist" in hand_states
+            
+            steer_key = None
+            
+            if is_fist_state:
+                direction = "Fist - Brake"
+                gas_key = None
                 
-                if current_key != key:
-                    if current_key:
-                        pyautogui.keyUp(current_key)
-                    pyautogui.keyDown(key)
-                    current_key = key
-                
-                pyautogui.keyDown(key)
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Left higher"
+                        steer_key = 'a'
+                    else:
+                        direction = "Right higher"
+                        steer_key = 'd'
             else:
-                direction = "Balanced"
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Left higher"
+                        steer_key = 'a'
+                    else:
+                        direction = "Right higher"
+                        steer_key = 'd'
+                else:
+                    direction = "Open - Forward"
+                    gas_key = 'w'
+            
+            if gas_key == 'w' and current_key != 'w':
                 if current_key:
                     pyautogui.keyUp(current_key)
-                    current_key = None
+                pyautogui.keyDown('w')
+                current_key = 'w'
+            
+            if steer_key and current_steer != steer_key:
+                if current_steer:
+                    pyautogui.keyUp(current_steer)
+                pyautogui.keyDown(steer_key)
+                current_steer = steer_key
+            
+            if not steer_key and current_steer:
+                pyautogui.keyUp(current_steer)
+                current_steer = None
+            
+            if not gas_key and current_key:
+                pyautogui.keyUp(current_key)
+                current_key = None
+        else:
+            if current_key:
+                pyautogui.keyUp(current_key)
+                current_key = None
+            if current_steer:
+                pyautogui.keyUp(current_steer)
+                current_steer = None
         
         cv2.putText(frame, f"Direction: {direction}", (10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2)
         cv2.putText(frame, f"Angle: {angle:.1f}", (10, 70),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(frame, f"FPS: {fps:.1f}", (10, 110),
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
         
-        cv2.imshow('Hand Landmarks', frame)
+        cv2.imshow('Virtual Steering Wheel', frame)
+        
+        current_time = time.time()
+        fps = 1 / (current_time - prev_time)
+        prev_time = current_time
+        
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     
+    if current_key:
+        pyautogui.keyUp(current_key)
+    if current_steer:
+        pyautogui.keyUp(current_steer)
     cap.release()
     cv2.destroyAllWindows()
 
