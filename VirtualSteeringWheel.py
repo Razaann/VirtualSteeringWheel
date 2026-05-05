@@ -33,6 +33,15 @@ def is_fist(hand_landmarks):
     return True
 
 
+def is_index_up(hand_landmarks):
+    index_tip = hand_landmarks[8]
+    index_pip = hand_landmarks[6]
+    index_mcp = hand_landmarks[5]
+    wrist = hand_landmarks[0]
+    
+    return index_tip.y < index_pip.y and index_tip.y < index_mcp.y and index_tip.y < wrist.y
+
+
 def draw_hand(frame, hand_landmarks):
     h, w = frame.shape[:2]
     
@@ -46,6 +55,54 @@ def draw_hand(frame, hand_landmarks):
         cv2.circle(frame, (x, y), 5, (0, 0, 0), 1)
     
     return pts[0]
+
+
+def draw_steering_guide(frame, co, direction):
+    if len(co) == 2:
+        xm, ym = (co[0][0] + co[1][0]) / 2, (co[0][1] + co[1][1]) / 2
+        radius = 150
+        try:
+            m = (co[1][1] - co[0][1]) / (co[1][0] - co[0][0])
+        except:
+            return
+        a = 1 + m ** 2
+        b = -2 * xm - 2 * co[0][0] * (m ** 2) + 2 * m * co[0][1] - 2 * m * ym
+        c = xm ** 2 + (m ** 2) * (co[0][0] ** 2) + co[0][1] ** 2 + ym ** 2 - 2 * co[0][1] * ym - 2 * co[0][1] * co[0][0] * m + 2 * m * ym * co[0][0] - 22500
+        xa = (-b + (b ** 2 - 4 * a * c) ** 0.5) / (2 * a)
+        xb = (-b - (b ** 2 - 4 * a * c) ** 0.5) / (2 * a)
+        ya = m * (xa - co[0][0]) + co[0][1]
+        yb = m * (xb - co[0][0]) + co[0][1]
+        
+        xap = xa
+        xbp = xb
+        yap = ya
+        ybp = yb
+        
+        if m != 0:
+            ap = 1 + ((-1 / m) ** 2)
+            bp = -2 * xm - 2 * xm * ((-1 / m) ** 2) + 2 * (-1 / m) * ym - 2 * (-1 / m) * ym
+            cp = xm ** 2 + ((-1 / m) ** 2) * (xm ** 2) + ym ** 2 + ym ** 2 - 2 * ym * ym - 2 * ym * xm * (-1 / m) + 2 * (-1 / m) * ym * xm - 22500
+            try:
+                xap = (-bp + (bp ** 2 - 4 * ap * cp) ** 0.5) / (2 * ap)
+                xbp = (-bp - (bp ** 2 - 4 * ap * cp) ** 0.5) / (2 * ap)
+                yap = (-1 / m) * (xap - xm) + ym
+                ybp = (-1 / m) * (xbp - xm) + ym
+            except:
+                pass
+        
+        cv2.circle(img=frame, center=(int(xm), int(ym)), radius=radius, color=(195, 255, 62), thickness=15)
+        
+        cv2.line(frame, (int(xb), int(yb)), (int(xa), int(ya)), (195, 255, 62), 20)
+        
+        if "Left" in direction:
+            cv2.line(frame, (int(xbp), int(ybp)), (int(xm), int(ym)), (195, 255, 62), 20)
+        elif "Right" in direction:
+            cv2.line(frame, (int(xap), int(yap)), (int(xm), int(ym)), (195, 255, 62), 20)
+        else:
+            if ybp > yap:
+                cv2.line(frame, (int(xbp), int(ybp)), (int(xm), int(ym)), (195, 255, 62), 20)
+            else:
+                cv2.line(frame, (int(xap), int(yap)), (int(xm), int(ym)), (195, 255, 62), 20)
 
 
 def run():
@@ -80,6 +137,8 @@ def run():
                 wrists.append(wrist)
                 if is_fist(hand_landmarks):
                     hand_states.append("Fist")
+                elif is_index_up(hand_landmarks):
+                    hand_states.append("Index")
                 else:
                     hand_states.append("Open")
         
@@ -104,10 +163,22 @@ def run():
                 angle = math.degrees(math.asin(ratio))
             
             is_fist_state = "Fist" in hand_states
+            is_index_state = "Index" in hand_states
             
             steer_key = None
             
-            if is_fist_state:
+            if is_index_state:
+                direction = "Index - Brake"
+                gas_key = 's'
+                
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Index + Left"
+                        steer_key = 'a'
+                    else:
+                        direction = "Index + Right"
+                        steer_key = 'd'
+            elif is_fist_state:
                 direction = "Fist - Brake"
                 gas_key = None
                 
@@ -130,11 +201,11 @@ def run():
                     direction = "Open - Forward"
                     gas_key = 'w'
             
-            if gas_key == 'w' and current_key != 'w':
+            if gas_key and current_key != gas_key:
                 if current_key:
                     pyautogui.keyUp(current_key)
-                pyautogui.keyDown('w')
-                current_key = 'w'
+                pyautogui.keyDown(gas_key)
+                current_key = gas_key
             
             if steer_key and current_steer != steer_key:
                 if current_steer:
@@ -163,6 +234,9 @@ def run():
                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         cv2.putText(frame, f"FPS: {fps:.1f}", (10, 110),
                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+        
+        if len(wrists) == 2:
+            draw_steering_guide(frame, wrists, direction)
         
         cv2.imshow('Virtual Steering Wheel', frame)
         
