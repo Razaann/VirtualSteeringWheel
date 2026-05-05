@@ -93,16 +93,6 @@ def draw_steering_guide(frame, co, direction):
         cv2.circle(img=frame, center=(int(xm), int(ym)), radius=radius, color=(195, 255, 62), thickness=15)
         
         cv2.line(frame, (int(xb), int(yb)), (int(xa), int(ya)), (195, 255, 62), 20)
-        
-        if "Left" in direction:
-            cv2.line(frame, (int(xbp), int(ybp)), (int(xm), int(ym)), (195, 255, 62), 20)
-        elif "Right" in direction:
-            cv2.line(frame, (int(xap), int(yap)), (int(xm), int(ym)), (195, 255, 62), 20)
-        else:
-            if ybp > yap:
-                cv2.line(frame, (int(xbp), int(ybp)), (int(xm), int(ym)), (195, 255, 62), 20)
-            else:
-                cv2.line(frame, (int(xap), int(yap)), (int(xm), int(ym)), (195, 255, 62), 20)
 
 
 def run():
