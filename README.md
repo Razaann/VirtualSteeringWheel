@@ -23,12 +23,12 @@ pip install -r requirements.txt
 
 | Hand State | Action | Key |
 |------------|--------|-----|
-| **Open** | Gas forward | `W` |
-| **Open + Left higher** | Gas + Turn left | `W` + `A` |
-| **Open + Right higher** | Gas + Turn right | `W` + `D` |
-| **Fist** | Brake (no gas) | No key |
-| **Fist + Left higher** | Turn left | `A` |
-| **Fist + Right higher** | Turn right | `D` |
+| **Fist** | Gas forward | `W` |
+| **Fist + Left higher** | Gas + Turn left | `W` + `A` |
+| **Fist + Right higher** | Gas + Turn right | `W` + `D` |
+| **Open** | Brake (no gas) | No key |
+| **Open + Left higher** | Turn left | `A` |
+| **Open + Right higher** | Turn right | `D` |
 | **Index up** | Brake | `S` |
 | **Index + Left higher** | Brake + Turn left | `S` + `A` |
 | **Index + Right higher** | Brake + Turn right | `S` + `D` |

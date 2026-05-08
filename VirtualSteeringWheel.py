@@ -135,7 +135,7 @@ def run():
         direction = "No hands"
         angle = 0
         steer_key = None
-        gas_key = 'w'
+        gas_key = None
         
         if len(wrists) == 2:
             cv2.line(frame, wrists[0], wrists[1], (255, 0, 255), 3)
@@ -158,38 +158,38 @@ def run():
             steer_key = None
             
             if is_index_state:
-                direction = "Index - Brake"
                 gas_key = 's'
-                
                 if angle > 10:
                     if dy > 0:
-                        direction = "Index + Left"
+                        direction = "Backward + Left"
                         steer_key = 'a'
                     else:
-                        direction = "Index + Right"
-                        steer_key = 'd'
-            elif is_fist_state:
-                direction = "Fist - Brake"
-                gas_key = None
-                
-                if angle > 10:
-                    if dy > 0:
-                        direction = "Left higher"
-                        steer_key = 'a'
-                    else:
-                        direction = "Right higher"
-                        steer_key = 'd'
-            else:
-                if angle > 10:
-                    if dy > 0:
-                        direction = "Left higher"
-                        steer_key = 'a'
-                    else:
-                        direction = "Right higher"
+                        direction = "Backward + Right"
                         steer_key = 'd'
                 else:
-                    direction = "Open - Forward"
-                    gas_key = 'w'
+                    direction = "Backward"
+            elif is_fist_state:
+                gas_key = None
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Left"
+                        steer_key = 'a'
+                    else:
+                        direction = "Right"
+                        steer_key = 'd'
+                else:
+                    direction = ""
+            else:
+                gas_key = 'w'
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Forward + Left"
+                        steer_key = 'a'
+                    else:
+                        direction = "Forward + Right"
+                        steer_key = 'd'
+                else:
+                    direction = "Forward"
             
             if gas_key and current_key != gas_key:
                 if current_key:
