@@ -1,6 +1,6 @@
 # Virtual Steering Wheel
 
-A computer vision-based virtual steering wheel using hand tracking. Control racing games by holding your hands in front of a webcam like you're gripping a steering wheel.
+A computer vision-based virtual steering wheel using hand tracking with MediaPipe. Control racing games by holding your hands in front of a webcam like you're gripping a steering wheel.
 
 ## Installation
 
@@ -12,37 +12,48 @@ pip install -r requirements.txt
 
 1. Run the script:
    ```bash
-   python steering_wheel.py
+   python VirtualSteeringWheel.py
    ```
 
-2. Hold both hands in front of your webcam:
-   - Left hand controls the left side
-   - Right hand controls the right side
-   - The angle between your hands determines steering direction
+2. Hold both hands in front of your webcam like gripping a steering wheel
 
 3. Press **'q'** to quit
 
-## Controls
+## Hand States & Controls
 
-- **Straight** (-10° to 10°): No input
-- **Slight Left** (10° to 30°): Left arrow key
-- **Medium Left** (30° to 50°): Left arrow key
-- **Hard Left** (>50°): Left arrow key
-- **Slight Right** (-30° to -10°): Right arrow key
-- **Medium Right** (-50° to -30°): Right arrow key
-- **Hard Right** (<-50°): Right arrow key
+| Hand State | Action | Key |
+|------------|--------|-----|
+| **Open** | Gas forward | `W` |
+| **Open + Left higher** | Gas + Turn left | `W` + `A` |
+| **Open + Right higher** | Gas + Turn right | `W` + `D` |
+| **Fist** | Brake (no gas) | No key |
+| **Fist + Left higher** | Turn left | `A` |
+| **Fist + Right higher** | Turn right | `D` |
+| **Index up** | Brake | `S` |
+| **Index + Left higher** | Brake + Turn left | `S` + `A` |
+| **Index + Right higher** | Brake + Turn right | `S` + `D` |
+
+## Steering Detection
+
+- Detects angle between both hands using Pythagorean calculation
+- Threshold: angle > 10° triggers steering
+- Visual steering wheel guide shows circle + horizontal line connecting hand joints
 
 ## Requirements
 
 - Webcam
-- Python 3.7+
+- Python 3.8+
 - OpenCV
-- MediaPipe
+- MediaPipe 0.10+
 - NumPy
 - PyAutoGUI
+- `VirtualSteeringWheel.task` (MediaPipe hand landmarker model)
 
 ## Notes
 
+- Uses MediaPipe Tasks API (not deprecated `solutions` module)
 - Ensure good lighting for hand detection
-- Keep your hands within the camera frame
-- The program uses the palm center (landmark 9) for tracking
+- Keep both hands within the camera frame
+- Hand detection: wrist landmark (index 0)
+- Index finger detection: landmark 8 above PIP (6) and MCP (5)
+- Fist detection: all fingertips below PIP joints
