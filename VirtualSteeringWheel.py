@@ -161,17 +161,6 @@ def run():
             steer_key = None
             
             if is_index_state:
-                gas_key = 's'
-                if angle > 10:
-                    if dy > 0:
-                        direction = "Backward + Left"
-                        steer_key = 'a'
-                    else:
-                        direction = "Backward + Right"
-                        steer_key = 'd'
-                else:
-                    direction = "Backward"
-            elif is_open_palm_state:
                 gas_key = None
                 if angle > 10:
                     if dy > 0:
@@ -182,6 +171,17 @@ def run():
                         steer_key = 'd'
                 else:
                     direction = ""
+            elif is_open_palm_state:
+                gas_key = 's'
+                if angle > 10:
+                    if dy > 0:
+                        direction = "Backward + Left"
+                        steer_key = 'a'
+                    else:
+                        direction = "Backward + Right"
+                        steer_key = 'd'
+                else:
+                    direction = "Backward"
             else:
                 gas_key = 'w'
                 if angle > 10:

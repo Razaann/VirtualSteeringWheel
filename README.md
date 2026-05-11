@@ -26,12 +26,12 @@ pip install -r requirements.txt
 | **Fist** | Gas forward | `W` |
 | **Fist + Left higher** | Gas + Turn left | `W` + `A` |
 | **Fist + Right higher** | Gas + Turn right | `W` + `D` |
-| **Open** | Brake (no gas) | No key |
-| **Open + Left higher** | Turn left | `A` |
-| **Open + Right higher** | Turn right | `D` |
-| **Index up** | Brake | `S` |
-| **Index + Left higher** | Brake + Turn left | `S` + `A` |
-| **Index + Right higher** | Brake + Turn right | `S` + `D` |
+| **Index up** | Brake (no gas) | No key |
+| **Index + Left higher** | Turn left | `A` |
+| **Index + Right higher** | Turn right | `D` |
+| **Open Palm** | Brake | `S` |
+| **Open Palm + Left higher** | Brake + Turn left | `S` + `A` |
+| **Open Palm + Right higher** | Brake + Turn right | `S` + `D` |
 
 ## Steering Detection
 
