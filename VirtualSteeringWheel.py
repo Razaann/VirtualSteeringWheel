@@ -23,7 +23,7 @@ FINGER_CONNECTIONS = [
 ]
 
 
-def is_fist(hand_landmarks):
+def is_open_palm(hand_landmarks):
     fingertips = [4, 8, 12, 16, 20]
     finger_pips = [2, 6, 10, 14, 18]
     
@@ -107,6 +107,9 @@ def run():
     angle = 0
     prev_time = time.time()
     fps = 0
+    fps_samples = []
+    last_fps_print_time = time.time()
+    start_time = time.time()
     
     while cap.isOpened():
         ret, frame = cap.read()
@@ -125,12 +128,12 @@ def run():
             for hand_landmarks in result.hand_landmarks:
                 wrist = draw_hand(frame, hand_landmarks)
                 wrists.append(wrist)
-                if is_fist(hand_landmarks):
-                    hand_states.append("Fist")
+                if is_open_palm(hand_landmarks):
+                    hand_states.append("Open Palm")
                 elif is_index_up(hand_landmarks):
                     hand_states.append("Index")
                 else:
-                    hand_states.append("Open")
+                    hand_states.append("Fist")
         
         direction = "No hands"
         angle = 0
@@ -152,7 +155,7 @@ def run():
                 ratio = min(abs(dy) / hypotenuse, 1.0)
                 angle = math.degrees(math.asin(ratio))
             
-            is_fist_state = "Fist" in hand_states
+            is_open_palm_state = "Open Palm" in hand_states
             is_index_state = "Index" in hand_states
             
             steer_key = None
@@ -168,7 +171,7 @@ def run():
                         steer_key = 'd'
                 else:
                     direction = "Backward"
-            elif is_fist_state:
+            elif is_open_palm_state:
                 gas_key = None
                 if angle > 10:
                     if dy > 0:
@@ -233,6 +236,13 @@ def run():
         current_time = time.time()
         fps = 1 / (current_time - prev_time)
         prev_time = current_time
+        fps_samples.append(fps)
+        
+        if current_time - last_fps_print_time >= 10:
+            elapsed_seconds = int(last_fps_print_time - start_time)
+            avg_fps = sum(fps_samples[-30:]) / min(len(fps_samples), 30)
+            print(f"FPS on {elapsed_seconds}s Frame: {avg_fps:.2f} FPS")
+            last_fps_print_time = current_time
         
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -241,6 +251,15 @@ def run():
         pyautogui.keyUp(current_key)
     if current_steer:
         pyautogui.keyUp(current_steer)
+    
+    total_duration = time.time() - start_time
+    overall_avg_fps = sum(fps_samples) / len(fps_samples) if fps_samples else 0
+    print(f"Duration: {total_duration:.1f} seconds")
+    print(f"Total frames: {len(fps_samples)}")
+    print(f"Overall Average FPS: {overall_avg_fps:.2f}")
+    print(f"Min FPS: {min(fps_samples):.2f}" if fps_samples else "Min FPS: N/A")
+    print(f"Max FPS: {max(fps_samples):.2f}" if fps_samples else "Max FPS: N/A")
+    
     cap.release()
     cv2.destroyAllWindows()
 
